@@ -24,6 +24,29 @@ def ExpMod(c, a, N):
         return 1 % N
     return exp_mod_recursive(c, a, N)
 
+# Q5 - Génération des clefs
+
+def generer_grand_nombre_premier(bits=1024):
+    while True:
+        nombre_aleotoire = secrets.randbits(bits)
+
+        decal_binaire = 1 << (bits - 1)   # un nombre avec uniquement le bit de poids fort à 1
+        nombre_aleotoire |= decal_binaire   # force le bit de poids fort à 1 avec un OU binaire afin d'avoir un nombre de 1024 bits
+
+        if sympy.isprime(nombre_aleotoire):
+            return nombre_aleotoire
+
+def KeyGen(bits=1024):
+    p = generer_grand_nombre_premier(bits)
+    q = generer_grand_nombre_premier(bits)
+
+    while q == p:
+        q = generer_grand_nombre_premier(bits)
+    N = p * q
+    phi_N = (p -1) * (q - 1)
+
+    return N, phi_N
+
 
 
 
@@ -37,6 +60,18 @@ def main():
         print(s)
         sorties.append(s)
 
+
+    # Génération des clefs (couteux, on le fait une fois)
+
+    log("=" * 70)
+    log("Génération des clefs (1024 bits)")
+    log("=" * 70)
+
+    N, phi_N = KeyGen(bits=1024)
+
+    log(f"pk = N       = {N}")
+    log(f"sk = phi(N)  = {phi_N}")
+    log()
 
     # Q4 - Test ExpMod sur 10 grands nombres
     log("=" * 70)
@@ -61,6 +96,15 @@ def main():
         log(f"  pow() Python  = {res_pow3}")
         log(f"  Résultat      : {match}")
         log()
+
+    # Q5 - Les clefs ont déjà été effectuées, on vérifie juste la taille
+
+    log("="*70)
+    log("Q5 - Vérification KeyGen()")
+    log("="*70)
+    log(f"Taille de N      : {N.bit_length()} bits (attendu ≥ 2048)")
+    log(f"Taille de phi(N) : {phi_N.bit_length()} bits")
+    log()
 
 if __name__ == "__main__":
     main()
