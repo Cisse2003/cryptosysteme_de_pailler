@@ -47,10 +47,22 @@ def KeyGen(bits=1024):
 
     return N, phi_N
 
+#Q6 - Chiffrement et déchiffrement
+def Enc(m,N):
+    r = secrets.randbits(2048) #r doit être  inférieur à N, N est de 2048 bits(p et q sont de 1024 bits)
+    while r <= 0 or r >= N: 
+        r=secrets.randbits(2048)
+    c = (pow(1 + N, m, N**2) * pow(r, N, N**2)) % (N**2)
+
+    return c, r
 
 
+def Dec(c, N, phi_N):
+    r = pow(c,pow(N, -1, phi_N), N)
+    
+    m = ((c * pow(r, -N, N**2)) % N**2 - 1) // N
 
-
+    return m
 # Main
 
 def main():
@@ -105,6 +117,29 @@ def main():
     log(f"Taille de N      : {N.bit_length()} bits (attendu ≥ 2048)")
     log(f"Taille de phi(N) : {phi_N.bit_length()} bits")
     log()
+
+    # Q6 - Test chiffrement et déchiffrement
+    log("="*70)
+    log("Q6 - Test chiffrement/déchiffrement")
+    log("="*70)
+    for i in range(1,101):
+        m = secrets.randbits(2048)
+        while m < 0 or m >= N:
+            m = secrets.randbits(2048)
+        c, r = Enc(m, N)
+        m_dechiffre = Dec(c, N, phi_N)
+
+        if m == m_dechiffre:
+            match = "OK" 
+        else:
+            match = "ERREUR"
+
+        log(f"Test {i}:")
+        log(f"  Message original : {m}")
+        log(f"  Chiffrement     : {c} (r={r})")
+        log(f"  Déchiffrement   : {m_dechiffre}")   
+        log(f"  Résultat        : {match}")
+        log()
 
 if __name__ == "__main__":
     main()
