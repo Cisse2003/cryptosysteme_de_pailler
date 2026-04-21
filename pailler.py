@@ -107,16 +107,24 @@ def inverse_mod(a, n):
         raise ValueError(f"{a} n'est pas inversible mod {n}")
     return u % n
 
-def Dec(c, N, phi_N):
-    exp_r = inverse_mod(N, phi_N)
-    r = ExpMod(c, exp_r, N)
-    #r = ExpMod(c,ExpMod(N, -1, phi_N), N)
-
-    r_inv = inverse_mod(r, N**2)
-    r_invN = ExpMod(r_inv, N, N ** 2)
-    m = ((c * r_invN ) % N**2 - 1) // N
-
+def Dec(c, N, phi_N, r=None):
+    N2 = N**2
+    if r is None:
+        # cas normal : on calcule r depuis c
+        exp_r = inverse_mod(N, phi_N)
+        r = ExpMod(c, exp_r, N)
+    # déchiffrement avec r connu
+    r_inv = inverse_mod(r, N2)
+    r_invN = ExpMod(r_inv, N, N2)
+    m = ((c * r_invN) % N2 - 1) // N
     return m
+
+def homomorphique_additif(c1, c2, r1, r2, N, phi_N):
+    c_sum = (c1 * c2) % (N**2)
+    r = (r1 * r2) % N
+
+    return Dec(c_sum, N, phi_N, r=r)
+
 # Main
 
 def main():
@@ -132,6 +140,7 @@ def main():
     log("=" * 70)
     log("Génération des clefs (1024 bits)")
     log("=" * 70)
+    log()
 
     N, phi_N = KeyGen(bits=1024)
 
@@ -143,6 +152,7 @@ def main():
     log("=" * 70)
     log("Q4 - Test ExpMod() sur 10 grands nombres")
     log("=" * 70)
+    log()
     for i in range(1, 11):
 
         base = secrets.randbits(256)
@@ -168,6 +178,7 @@ def main():
     log("="*70)
     log("Q5 - Vérification KeyGen()")
     log("="*70)
+    log()
     log(f"Taille de N      : {N.bit_length()} bits (attendu ≥ 2048)")
     log(f"Taille de phi(N) : {phi_N.bit_length()} bits")
     log()
@@ -176,10 +187,14 @@ def main():
     n = 3120
     inv = inverse_mod(x, n)
     log(f"Test inverse_mod: 17^-1 mod 3120 = {inv}, vérif: {(x * inv) % n} (attendu 1)")
+    log()
+
     # Q6 - Test chiffrement et déchiffrement
     log("="*70)
     log("Q6 - Test chiffrement/déchiffrement")
     log("="*70)
+    log()
+
     for i in range(1,101):
         m = secrets.randbits(2048)
         while m < 0 or m >= N:
@@ -198,6 +213,37 @@ def main():
         log(f"  Déchiffrement   : {m_dechiffre}")   
         log(f"  Résultat        : {match}")
         log()
+
+    # Q7 - Proprité homomorphique
+    log("=" * 70)
+    log("Q7 - Test homomorphique additif (10 tests)")
+    log("=" * 70)
+    log()
+
+    for i in range(1, 11):
+        m1 = secrets.randbits(1024) % (N // 2)
+        m2 = secrets.randbits(1024) % (N // 2)
+
+        c1, r1 = Enc(m1, N)
+        c2, r2 = Enc(m2, N)
+
+        m = homomorphique_additif(c1, c2, r1, r2, N, phi_N)
+        somme_clairs = (m1 + m2) % phi_N
+        ok = (m == somme_clairs)
+
+        log(f"Test {i}:")
+        log(f"  m1               = {m1}")
+        log(f"  m2               = {m2}")
+        log(f"  m1 + m2          = {m1 + m2}")
+        log(f"  Déchiffré c1×c2  = {m}")
+        log(f"  Résultat         : {'OK' if ok else 'ERREUR'}")
+        log()
+
+    # Écriture dans test.txt
+    with open("test.txt", "w", encoding="utf-8") as f:
+        f.write("\n".join(sorties))
+    print("\n>>> Résultats écrits dans test.txt")
+
 
 if __name__ == "__main__":
     main()
